@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>8 Марта — ДУМД</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,600&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --gold: #c9a84c; --gold-light: #f0d080;
+    --rose: #e8a0a8; --deep: #1a0a10;
+    --blush: #f5e6ea; --burgundy: #8b1a3a;
+  }
+  body {
+    min-height: 100vh; min-height: 100dvh;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--deep);
+    font-family: 'Cormorant Garamond', serif;
+    overflow-x: hidden;
+  }
+  .bg {
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse at 20% 20%, #3d0a1e 0%, #1a0a10 40%, #0d0508 100%);
+    z-index: 0;
+  }
+  .bg::after {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(circle at 15% 85%, rgba(201,168,76,0.12) 0%, transparent 40%),
+      radial-gradient(circle at 85% 15%, rgba(232,160,168,0.12) 0%, transparent 40%);
+  }
+  canvas#petals { position: fixed; inset: 0; pointer-events: none; z-index: 1; }
+
+  .card {
+    position: relative; z-index: 10;
+    width: min(480px, 94vw);
+    margin: 20px auto;
+    padding: 48px 40px 40px;
+    background: linear-gradient(160deg, rgba(30,8,18,0.97) 0%, rgba(20,6,14,0.99) 100%);
+    border: 1px solid rgba(201,168,76,0.35);
+    box-shadow: 0 0 0 1px rgba(201,168,76,0.08), 0 30px 80px rgba(0,0,0,0.7),
+                inset 0 1px 0 rgba(201,168,76,0.2), 0 0 60px rgba(201,168,76,0.06);
+    animation: cardReveal 1.2s cubic-bezier(0.16,1,0.3,1) both;
+  }
+  @keyframes cardReveal {
+    from { opacity:0; transform: translateY(40px) scale(0.95); }
+    to   { opacity:1; transform: translateY(0) scale(1); }
+  }
+  .corner { position: absolute; width: 46px; height: 46px; opacity: 0.6; }
+  .corner svg { width:100%; height:100%; }
+  .corner.tl { top:12px; left:12px; }
+  .corner.tr { top:12px; right:12px; transform: scaleX(-1); }
+  .corner.bl { bottom:12px; left:12px; transform: scaleY(-1); }
+  .corner.br { bottom:12px; right:12px; transform: scale(-1,-1); }
+
+  .date-pill {
+    display: inline-block; padding: 5px 20px;
+    border: 1px solid rgba(201,168,76,0.5); border-radius: 100px;
+    color: var(--gold); font-size: 11px; letter-spacing: 4px;
+    text-transform: uppercase; margin-bottom: 20px;
+    background: rgba(201,168,76,0.05);
+    animation: fadeUp 0.8s 0.3s both;
+  }
+  .floral-center {
+    display: flex; justify-content: center; margin-bottom: 16px;
+    animation: fadeUp 0.8s 0.4s both;
+  }
+  .floral-center svg { width: 110px; filter: drop-shadow(0 0 20px rgba(232,160,168,0.4)); }
+
+  .heading { text-align: center; animation: fadeUp 0.8s 0.5s both; }
+  .heading .num {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(64px, 15vw, 90px); font-weight: 700; font-style: italic;
+    line-height: 1;
+    background: linear-gradient(135deg, #c9a84c 0%, #f0d080 40%, #c9a84c 60%, #a07830 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    filter: drop-shadow(0 2px 20px rgba(201,168,76,0.3));
+  }
+  .heading .word {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(16px, 4vw, 24px); font-style: italic;
+    color: var(--rose); letter-spacing: 8px; text-transform: uppercase;
+    display: block; margin-top: -6px;
+  }
+  .dept {
+    text-align: center; margin-top: 10px;
+    font-size: clamp(13px, 3vw, 16px); letter-spacing: 2px;
+    text-transform: uppercase; color: rgba(201,168,76,0.7);
+    animation: fadeUp 0.8s 0.55s both;
+  }
+  .divider {
+    display: flex; align-items: center; gap: 10px; margin: 22px 0;
+    animation: fadeUp 0.8s 0.6s both;
+  }
+  .divider::before, .divider::after {
+    content:''; flex:1; height:1px;
+    background: linear-gradient(90deg, transparent, rgba(201,168,76,0.5), transparent);
+  }
+  .divider-icon { color: var(--gold); font-size: 14px; }
+
+  .invite-text {
+    text-align: center; color: rgba(245,230,234,0.85);
+    font-size: clamp(14px, 3.5vw, 17px); line-height: 1.8;
+    animation: fadeUp 0.8s 0.7s both;
+  }
+  .invite-text strong { color: var(--gold-light); font-weight: 400; font-style: italic; }
+
+  .info-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    margin-top: 28px; animation: fadeUp 0.8s 0.85s both;
+  }
+  .info-block {
+    background: rgba(201,168,76,0.06); border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 8px; padding: 14px 16px; text-align: center;
+  }
+  .info-block .label {
+    font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--gold); opacity: 0.7; margin-bottom: 5px;
+  }
+  .info-block .value {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(14px, 3.2vw, 17px); color: var(--blush); font-style: italic;
+  }
+  .cta { margin-top: 28px; text-align: center; animation: fadeUp 0.8s 1s both; }
+  .cta-text {
+    font-size: clamp(20px, 5vw, 26px);
+    font-family: 'Playfair Display', serif; font-style: italic;
+    background: linear-gradient(135deg, var(--rose), var(--gold-light), var(--rose));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .cta-sub {
+    font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+    color: rgba(201,168,76,0.55); margin-top: 6px;
+  }
+  .glow-line {
+    position: absolute; bottom:0; left:10%; right:10%;
+    height:2px; background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    opacity: 0.6;
+  }
+  .sparkle {
+    position: absolute; border-radius: 50%;
+    background: var(--gold-light); pointer-events: none;
+    animation: sparkleAnim var(--dur,3s) var(--delay,0s) infinite; opacity:0;
+  }
+  @keyframes sparkleAnim {
+    0%  { opacity:0; transform: scale(0) rotate(0deg); }
+    50% { opacity:1; transform: scale(1) rotate(180deg); }
+    100%{ opacity:0; transform: scale(0) rotate(360deg); }
+  }
+  @keyframes fadeUp {
+    from { opacity:0; transform: translateY(18px); }
+    to   { opacity:1; transform: translateY(0); }
+  }
+
+  /* Language switcher */
+  .lang-switch {
+    position: fixed; top: 12px; right: 12px; z-index: 100;
+    display: flex; gap: 6px;
+  }
+  .lang-btn {
+    padding: 5px 12px; border-radius: 20px; border: 1px solid rgba(201,168,76,0.4);
+    background: rgba(26,10,16,0.9); color: rgba(201,168,76,0.8);
+    font-size: 12px; cursor: pointer; transition: all 0.2s;
+    font-family: 'Cormorant Garamond', serif; letter-spacing: 1px;
+  }
+  .lang-btn.active { background: rgba(201,168,76,0.2); color: var(--gold-light); border-color: var(--gold); }
+  .lang-btn:hover { background: rgba(201,168,76,0.15); }
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<canvas id="petals"></canvas>
+
+<!-- Language switcher -->
+<div class="lang-switch">
+  <button class="lang-btn active" onclick="setLang('ru')" id="btn-ru">RU</button>
+  <button class="lang-btn" onclick="setLang('kz')" id="btn-kz">KZ</button>
+</div>
+
+<div class="card">
+  <div class="corner tl"><svg viewBox="0 0 50 50" fill="none"><path d="M2 2 L2 20 M2 2 L20 2" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round"/><path d="M2 2 Q12 12 26 8 Q18 22 8 26 Q12 12 2 2Z" fill="rgba(201,168,76,0.15)" stroke="#c9a84c" stroke-width="0.8"/><circle cx="2" cy="2" r="2" fill="#c9a84c"/></svg></div>
+  <div class="corner tr"><svg viewBox="0 0 50 50" fill="none"><path d="M2 2 L2 20 M2 2 L20 2" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round"/><path d="M2 2 Q12 12 26 8 Q18 22 8 26 Q12 12 2 2Z" fill="rgba(201,168,76,0.15)" stroke="#c9a84c" stroke-width="0.8"/><circle cx="2" cy="2" r="2" fill="#c9a84c"/></svg></div>
+  <div class="corner bl"><svg viewBox="0 0 50 50" fill="none"><path d="M2 2 L2 20 M2 2 L20 2" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round"/><path d="M2 2 Q12 12 26 8 Q18 22 8 26 Q12 12 2 2Z" fill="rgba(201,168,76,0.15)" stroke="#c9a84c" stroke-width="0.8"/><circle cx="2" cy="2" r="2" fill="#c9a84c"/></svg></div>
+  <div class="corner br"><svg viewBox="0 0 50 50" fill="none"><path d="M2 2 L2 20 M2 2 L20 2" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round"/><path d="M2 2 Q12 12 26 8 Q18 22 8 26 Q12 12 2 2Z" fill="rgba(201,168,76,0.15)" stroke="#c9a84c" stroke-width="0.8"/><circle cx="2" cy="2" r="2" fill="#c9a84c"/></svg></div>
+  <div class="glow-line"></div>
+
+  <div class="sparkle" style="top:15%;left:8%;--dur:2.5s;--delay:0.3s;width:3px;height:3px;"></div>
+  <div class="sparkle" style="top:25%;right:10%;--dur:3.2s;--delay:1s;width:4px;height:4px;"></div>
+  <div class="sparkle" style="top:60%;left:5%;--dur:2.8s;--delay:0.7s;width:5px;height:5px;"></div>
+  <div class="sparkle" style="bottom:20%;right:8%;--dur:3.5s;--delay:1.5s;width:3px;height:3px;"></div>
+
+  <div style="text-align:center;">
+    <div class="date-pill" id="date-pill">8 марта · 2025</div>
+  </div>
+
+  <div class="floral-center">
+    <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="60" cy="72" rx="5" ry="22" fill="rgba(60,120,60,0.5)" transform="rotate(-20 60 72)"/>
+      <ellipse cx="60" cy="72" rx="5" ry="18" fill="rgba(60,120,60,0.5)" transform="rotate(20 60 72)"/>
+      <line x1="60" y1="60" x2="60" y2="108" stroke="rgba(100,160,80,0.6)" stroke-width="2" stroke-linecap="round"/>
+      <g transform="translate(60,48)">
+        <ellipse cx="0" cy="-18" rx="9" ry="16" fill="#c0505a" opacity="0.85" transform="rotate(0)"/>
+        <ellipse cx="0" cy="-18" rx="9" ry="16" fill="#c0505a" opacity="0.85" transform="rotate(51.4)"/>
+        <ellipse cx="0" cy="-18" rx="9" ry="16" fill="#c0505a" opacity="0.85" transform="rotate(102.8)"/>
+        <ellipse cx="0" cy="-18" rx="9" ry="16" fill="#c0505a" opacity="0.85" transform="rotate(154.2)"/>
+        <ellipse cx="0" cy="-18" rx="9" ry="16" fill="#c0505a" opacity="0.85" transform="rotate(205.6)"/>
+        <ellipse cx="0" cy="-18" rx="9" ry="16" fill="#c0505a" opacity="0.85" transform="rotate(257)"/>
+        <ellipse cx="0" cy="-18" rx="9" ry="16" fill="#c0505a" opacity="0.85" transform="rotate(308.4)"/>
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="#e06070" opacity="0.9" transform="rotate(25.7)"/>
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="#e06070" opacity="0.9" transform="rotate(77.1)"/>
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="#e06070" opacity="0.9" transform="rotate(128.5)"/>
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="#e06070" opacity="0.9" transform="rotate(179.9)"/>
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="#e06070" opacity="0.9" transform="rotate(231.3)"/>
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="#e06070" opacity="0.9" transform="rotate(282.7)"/>
+        <ellipse cx="0" cy="-7" rx="5" ry="9" fill="#f08090" transform="rotate(0)"/>
+        <ellipse cx="0" cy="-7" rx="5" ry="9" fill="#f08090" transform="rotate(60)"/>
+        <ellipse cx="0" cy="-7" rx="5" ry="9" fill="#f08090" transform="rotate(120)"/>
+        <ellipse cx="0" cy="-7" rx="5" ry="9" fill="#f08090" transform="rotate(180)"/>
+        <ellipse cx="0" cy="-7" rx="5" ry="9" fill="#f08090" transform="rotate(240)"/>
+        <ellipse cx="0" cy="-7" rx="5" ry="9" fill="#f08090" transform="rotate(300)"/>
+        <circle cx="0" cy="0" r="6" fill="#ffc0c8"/>
+        <circle cx="0" cy="0" r="3" fill="#ffe0e8"/>
+      </g>
+      <g transform="translate(32,70) scale(0.55)">
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="#e8a0b0" opacity="0.8" transform="rotate(0)"/>
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="#e8a0b0" opacity="0.8" transform="rotate(72)"/>
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="#e8a0b0" opacity="0.8" transform="rotate(144)"/>
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="#e8a0b0" opacity="0.8" transform="rotate(216)"/>
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="#e8a0b0" opacity="0.8" transform="rotate(288)"/>
+        <circle cx="0" cy="0" r="5" fill="#ffd8e4"/>
+      </g>
+      <g transform="translate(88,68) scale(0.5)">
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="#c9a84c" opacity="0.7" transform="rotate(0)"/>
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="#c9a84c" opacity="0.7" transform="rotate(72)"/>
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="#c9a84c" opacity="0.7" transform="rotate(144)"/>
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="#c9a84c" opacity="0.7" transform="rotate(216)"/>
+        <ellipse cx="0" cy="-12" rx="7" ry="12" fill="#c9a84c" opacity="0.7" transform="rotate(288)"/>
+        <circle cx="0" cy="0" r="5" fill="#f0d080"/>
+      </g>
+    </svg>
+  </div>
+
+  <div class="heading">
+    <span class="num">8</span>
+    <span class="word" id="word-marta">Марта</span>
+  </div>
+  <div class="dept" id="dept-text">Департамент ДУМД</div>
+
+  <div class="divider"><span class="divider-icon">✦</span><span class="divider-icon" style="font-size:10px">✦</span><span class="divider-icon">✦</span></div>
+
+  <p class="invite-text" id="main-text">
+    Дорогие <strong>коллеги и подруги</strong>,<br>
+    мы с радостью приглашаем вас отметить<br>
+    <strong>Международный женский день</strong><br>
+    вместе с нами!
+  </p>
+
+  <div class="info-grid">
+    <div class="info-block">
+      <div class="label" id="lbl-when">📅 Когда</div>
+      <div class="value">8 Марта, пятница</div>
+    </div>
+    <div class="info-block">
+      <div class="label" id="lbl-time">🕐 Время</div>
+      <div class="value">17:00 — ...∞</div>
+    </div>
+    <div class="info-block">
+      <div class="label" id="lbl-place">📍 Место</div>
+      <div class="value" id="val-place">Переговорная «Весна»</div>
+    </div>
+    <div class="info-block">
+      <div class="label" id="lbl-dress">🌸 Дресс-код</div>
+      <div class="value" id="val-dress">Весенние цвета</div>
+    </div>
+  </div>
+
+  <div class="cta">
+    <div class="divider" style="margin:22px 0 18px"><span class="divider-icon">✦</span><span class="divider-icon" style="font-size:10px">✦</span><span class="divider-icon">✦</span></div>
+    <div class="cta-text" id="cta-main">Вы наш главный праздник</div>
+    <div class="cta-sub" id="cta-sub">Будем рады видеть каждую из вас</div>
+  </div>
+</div>
+
+<script>
+// Telegram Web App init
+if (window.Telegram && window.Telegram.WebApp) {
+  window.Telegram.WebApp.ready();
+  window.Telegram.WebApp.expand();
+}
+
+// Language switch
+const translations = {
+  ru: {
+    pill: "8 марта · 2025",
+    word: "Марта",
+    dept: "Департамент ДУМД",
+    main: `Дорогие <strong>коллеги и подруги</strong>,<br>мы с радостью приглашаем вас отметить<br><strong>Международный женский день</strong><br>вместе с нами!`,
+    when: "📅 Когда", time: "🕐 Время", place: "📍 Место", dress: "🌸 Дресс-код",
+    valPlace: "Переговорная «Весна»", valDress: "Весенние цвета",
+    ctaMain: "Вы наш главный праздник",
+    ctaSub: "Будем рады видеть каждую из вас"
+  },
+  kz: {
+    pill: "8 наурыз · 2025",
+    word: "Наурыз",
+    dept: "ДУМД Департаменті",
+    main: `Қымбатты <strong>әріптестер мен достар</strong>,<br>біз сізді<br><strong>Халықаралық әйелдер күнін</strong><br>бірге атап өтуге шақырамыз!`,
+    when: "📅 Қашан", time: "🕐 Уақыт", place: "📍 Орын", dress: "🌸 Киім үлгісі",
+    valPlace: "«Көктем» кеңес бөлмесі", valDress: "Көктемгі түстер",
+    ctaMain: "Сіз біздің басты мерекеміз",
+    ctaSub: "Сіздердің әрқайсысын көргенімізге қуанамыз"
+  }
+};
+
+function setLang(lang) {
+  const t = translations[lang];
+  document.getElementById('date-pill').textContent = t.pill;
+  document.getElementById('word-marta').textContent = t.word;
+  document.getElementById('dept-text').textContent = t.dept;
+  document.getElementById('main-text').innerHTML = t.main;
+  document.getElementById('lbl-when').textContent = t.when;
+  document.getElementById('lbl-time').textContent = t.time;
+  document.getElementById('lbl-place').textContent = t.place;
+  document.getElementById('lbl-dress').textContent = t.dress;
+  document.getElementById('val-place').textContent = t.valPlace;
+  document.getElementById('val-dress').textContent = t.valDress;
+  document.getElementById('cta-main').textContent = t.ctaMain;
+  document.getElementById('cta-sub').textContent = t.ctaSub;
+  document.getElementById('btn-ru').classList.toggle('active', lang === 'ru');
+  document.getElementById('btn-kz').classList.toggle('active', lang === 'kz');
+}
+
+// Petals
+const canvas = document.getElementById('petals');
+const ctx = canvas.getContext('2d');
+function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+resize(); window.addEventListener('resize', resize);
+const colors = ['#e8a0a8','#f0b0b8','#c9a84c','#f5d080','#f0c8d0','#e07080'];
+class Petal {
+  constructor() { this.reset(true); }
+  reset(init=false) {
+    this.x = Math.random() * canvas.width;
+    this.y = init ? Math.random() * canvas.height : -30;
+    this.size = 6 + Math.random() * 10;
+    this.opacity = 0.2 + Math.random() * 0.5;
+    this.speedY = 0.5 + Math.random() * 1.2;
+    this.speedX = (Math.random() - 0.5) * 0.8;
+    this.rotation = Math.random() * Math.PI * 2;
+    this.rotSpeed = (Math.random() - 0.5) * 0.04;
+    this.color = colors[Math.floor(Math.random() * colors.length)];
+    this.wobble = Math.random() * Math.PI * 2;
+  }
+  update() {
+    this.y += this.speedY; this.wobble += 0.025;
+    this.x += this.speedX + Math.sin(this.wobble) * 0.5;
+    this.rotation += this.rotSpeed;
+    if (this.y > canvas.height + 30) this.reset();
+  }
+  draw() {
+    ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.rotation);
+    ctx.globalAlpha = this.opacity;
+    ctx.beginPath(); ctx.ellipse(0, 0, this.size * 0.4, this.size, 0, 0, Math.PI*2);
+    ctx.fillStyle = this.color; ctx.fill(); ctx.restore();
+  }
+}
+const petals = Array.from({length: 40}, () => new Petal());
+(function animate() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  petals.forEach(p => { p.update(); p.draw(); });
+  requestAnimationFrame(animate);
+})();
+</script>
+</body>
+</html>
